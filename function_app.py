@@ -1,8 +1,9 @@
 import azure.functions as func
 import logging
 import pandas as pd
-from azure.storage.blob import BlobServiceClient
 import io
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
 import os
 
 app = func.FunctionApp()
@@ -15,10 +16,14 @@ def ProcessClientesJson(azevent: func.EventGridEvent):
     if not source_url or "/clientes/" not in source_url:
         return
 
-    # 1. Configuración de conexiones
-    # Usa la Connection String de tu ADLS (puedes ponerla en Variables de Entorno)
-    connection_string = os.getenv("ADLS_CONNECTION")
-    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    # 1. Leer la URL de la variable de entorno
+    account_url = os.environ["ACCOUNT_URL"]
+    
+    # 2. Configurar credenciales (Managed Identity en Azure / Tu login en VS Code)
+    token_credential = DefaultAzureCredential()
+    
+    # 3. Crear el cliente de forma segura
+    blob_service_client = BlobServiceClient(account_url, credential=token_credential)
 
     try:
         # 2. Leer el JSON original
